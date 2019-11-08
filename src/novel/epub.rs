@@ -16,6 +16,10 @@ h1, h2, h3, h4, div, p, ol, ul, li {
 #novel_chapter_contents {
 	line-height: 1.8;
 }
+.center {
+    width: 100%;
+    text-align: center;
+}
 "#;
 pub const NOVEL_CSS_NAME: &'static str = "novel.css";
 

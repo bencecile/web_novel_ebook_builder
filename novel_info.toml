@@ -1,0 +1,26 @@
+save_dir = "C:\\Manga\\!BooksToCopy"
+
+# ---- Kakuyomu Novels ----
+# [[novels]]
+# url = "https://kakuyomu.jp/works/1177354054881165840"
+# short_name = "慎重勇者"
+# [[novels]]
+# url = "https://kakuyomu.jp/works/1177354054885940897"
+# short_name = "野良竜"
+# [[novels]]
+# url = "https://kakuyomu.jp/works/1177354054882961557"
+# short_name = "魔法引きモフ"
+[[novels]]
+url = "https://kakuyomu.jp/works/1177354054884043614"
+short_name = "何故美女"
+[[novels]]
+url = "https://kakuyomu.jp/works/1177354054885111468"
+short_name = "英雄譚ノーマルガチャ"
+
+# ---- Syosetu Novels ----
+[[novels]]
+url = "https://ncode.syosetu.com/n2267be/"
+short_name = "Reゼロから異世界"
+[[novels]]
+url = "https://ncode.syosetu.com/n6316bn/"
+short_name = "転スラ"

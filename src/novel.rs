@@ -4,15 +4,14 @@ mod kakuyomu;
 use std::{
     path::{Path},
 };
-use kuchiki::{NodeRef};
-use reqwest::{Url};
+use isahc::http::{Uri};
 
 use ebook_builder::{
     Book, EBookType, FileType, ReadingDir,
     xml_tree::xhtml_prelude::*,
 };
 
-use crate::{NovelError};
+use crate::{NovelResult};
 
 #[derive(Debug)]
 pub struct Novel {
@@ -25,18 +24,20 @@ pub struct Novel {
 }
 impl Novel {
     pub fn print_name(&self) -> String { format!("{} [{}]", &self.title, &self.author) }
-    pub fn save_epubs(&self, save_dir: impl AsRef<Path>) -> Result<(), NovelError> {
+    pub fn save_epubs(&self, save_dir: impl AsRef<Path>) -> NovelResult<()> {
         let save_dir = save_dir.as_ref();
         match &self.contents {
             NovelContents::Sections(sections) => {
                 let books = self.make_section_epubs(&sections)?;
                 for (book, book_name) in books {
+                    let book_name = crate::sanitize_book_name(&book_name);
                     let book_path = save_dir.join(format!("{}.epub", book_name));
                     book.save_to_file(EBookType::Epub, book_path, true)?;
                 }
             },
             NovelContents::Chapters(chapters) => {
                 let (book, book_name) = self.make_chapter_epub(&chapters)?;
+                let book_name = crate::sanitize_book_name(&book_name);
                 let book_path = save_dir.join(format!("{}.epub", book_name));
                 book.save_to_file(EBookType::Epub, book_path, true)?;
             },
@@ -44,7 +45,7 @@ impl Novel {
         Ok(())
     }
 
-    fn start_book(&self) -> Result<Book, NovelError> {
+    fn start_book(&self) -> NovelResult<Book> {
         let mut book = Book::new(&self.title, ReadingDir::Rtl, "ja");
         book.add_author(&self.author, None);
         let title_page: Vec<u8> = epub::start_xhtml("表紙", BodyTag::new()
@@ -68,7 +69,7 @@ impl Novel {
         Ok(book)
     }
 
-    fn make_section_epubs(&self, sections: &[Section]) -> Result<Vec<(Book, String)>, NovelError> {
+    fn make_section_epubs(&self, sections: &[Section]) -> NovelResult< Vec<(Book, String)> > {
         let base_book = self.start_book()?;
         let mut books = Vec::new();
 
@@ -80,7 +81,7 @@ impl Novel {
         }
         Ok(books)
     }
-    fn make_chapter_epub(&self, chapters: &[Chapter]) -> Result<(Book, String), NovelError> {
+    fn make_chapter_epub(&self, chapters: &[Chapter]) -> NovelResult<(Book, String)> {
         let mut book = self.start_book()?;
         for chapter in chapters.iter() {
             chapter.add_to_book(&mut book)?;
@@ -107,7 +108,7 @@ impl Novel {
         let kan_stamp = if section_index == total_sections - 1 {
             self.status.kan_stamp()
         } else { "" };
-        format!("{} 第{}章 「{}」 [{}] (投稿版) ({}部分-{}部分){}",
+        format!("{} {} 「{}」 [{}] (投稿版) ({}部分-{}部分){}",
             &self.title, section_num, &section.name, &self.author,
             chapter_range.0, chapter_range.1, kan_stamp)
     }
@@ -152,11 +153,14 @@ struct Section {
     chapters: Vec<Chapter>,
 }
 impl Section {
-    fn fill_out_book(&self, section_num: usize, mut book: Book) -> Result<Book, NovelError> {
+    fn fill_out_book(&self, section_num: usize, mut book: Book) -> NovelResult<Book> {
         // Make a new page that will just have the name of the section
         //  This will probably be just after the main page
         let section_cover: Vec<u8> = epub::start_xhtml("章の表紙", BodyTag::new()
-                .append_child(H1Tag::new().text(&format!("第{}章", section_num)))
+                .append_child(H1Tag::new()
+                    .text(&section_num.to_string())
+                    .attr_class("center")
+                )
                 .append_child(H1Tag::new().text(&self.name))
             )
             .write_doc_to(Vec::new())?;
@@ -174,7 +178,6 @@ impl Section {
 #[derive(Debug)]
 struct Chapter {
     name: String,
-    // This can be anything that we find. Don't want to parse this.
     date: String,
     order_num: u32,
     // The content MUST NOT have the name of the chapter
@@ -190,14 +193,14 @@ impl Chapter {
         epub::start_xhtml(&self.name, BodyTag::new()
             .attr_id("novel_chapter")
             .append_child(H1Tag::new().text(&self.name))
-            .append_child(H2Tag::new().text(&self.date))
+            .append_child(H2Tag::new().text(&convert_num_string_to_ja(&self.date)))
             .append_child(H3Tag::new().text(
                 &format!("{}部分目", convert_num_string_to_ja(&self.order_num.to_string()))
             ))
             .append_child(content)
         )
     }
-    fn add_to_book(&self, book: &mut Book) -> Result<(), NovelError> {
+    fn add_to_book(&self, book: &mut Book) -> NovelResult<()> {
         let chapter_page: Vec<u8> = self.make_xhtml()
             .write_doc_to(Vec::new())?;
         let chapter_file_name = format!("chapter-{}.xhtml", self.order_num);
@@ -219,26 +222,27 @@ fn convert_num_string_to_ja(num_string: &str) -> String {
         '7' => '七',
         '8' => '八',
         '9' => '九',
-        _ => panic!("Didn't get a number"),
+        _ => c,
     }).collect()
 }
 
 #[derive(Debug)]
-enum ContentLine {
+pub enum ContentLine {
     Line(Vec<Content>),
-    EmptyLine,
+    Blank,
 }
 impl ContentLine {
     fn make_xhtml(&self) -> PTag {
         match self {
             Self::Line(contents) => contents.iter()
                 .fold(PTag::new(), |tag, content| content.append_to(tag)),
-            Self::EmptyLine => PTag::new(),
+            Self::Blank => PTag::new()
+                .append_child(BrTag::new()),
         }
     }
 }
 #[derive(Debug)]
-enum Content {
+pub enum Content {
     Span(String),
     Ruby {
         main: String,
@@ -270,8 +274,8 @@ pub enum NovelSite {
     Kakuyomu,
 }
 impl NovelSite {
-    pub fn is_a_novel(url: &Url) -> Option<NovelSite> {
-        if self::kakuyomu::is_kakuyomu_novel(url) {
+    pub fn is_a_novel(uri: &Uri) -> Option<NovelSite> {
+        if self::kakuyomu::is_kakuyomu_novel(uri) {
             Some(Self::Kakuyomu)
         } else {
             None
@@ -279,9 +283,9 @@ impl NovelSite {
     }
 
     // This should make as many other web requests as it needs
-    pub fn make_novel(&self, novel_site: &str, page_node: NodeRef) -> Result<Novel, NovelError> {
+    pub fn make_novel(&self, uri: Uri) -> NovelResult<Novel> {
         match self {
-            Self::Kakuyomu => self::kakuyomu::make_kakuyomu_novel(novel_site, page_node),
+            Self::Kakuyomu => self::kakuyomu::make_kakuyomu_novel(uri),
         }
     }
 }
