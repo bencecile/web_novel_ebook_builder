@@ -117,6 +117,7 @@ pub enum NovelComponent {
     Title,
     Author,
     Date,
+    InfoPath,
     Status,
     Chapter,
     ChapterContent,

@@ -1,5 +1,7 @@
 mod epub;
 mod kakuyomu;
+mod novel_utils;
+mod syosetu;
 
 use std::{
     path::{Path},
@@ -121,7 +123,7 @@ impl Novel {
 }
 
 #[derive(Debug, Copy, Clone)]
-enum NovelStatus {
+pub enum NovelStatus {
     Running,
     Finished,
 }
@@ -189,14 +191,13 @@ impl Chapter {
         let content = self.content.iter()
             .fold(DivTag::new().attr_id("novel_chapter_contents"),
                 |tag, content_line| tag.append_child(content_line.make_xhtml()));
+        let part_num = novel_utils::convert_num_string_to_ja(&self.order_num.to_string());
 
         epub::start_xhtml(&self.name, BodyTag::new()
             .attr_id("novel_chapter")
             .append_child(H1Tag::new().text(&self.name))
-            .append_child(H2Tag::new().text(&convert_num_string_to_ja(&self.date)))
-            .append_child(H3Tag::new().text(
-                &format!("{}部分目", convert_num_string_to_ja(&self.order_num.to_string()))
-            ))
+            .append_child(H2Tag::new().text(&self.date))
+            .append_child(H3Tag::new().text(&format!("{}部分目", part_num)))
             .append_child(content)
         )
     }
@@ -208,22 +209,6 @@ impl Chapter {
         book.mark_as_chapter_start(&self.name);
         Ok(())
     }
-}
-
-fn convert_num_string_to_ja(num_string: &str) -> String {
-    num_string.chars().map(|c| match c {
-        '0' => '〇',
-        '1' => '一',
-        '2' => '二',
-        '3' => '三',
-        '4' => '四',
-        '5' => '五',
-        '6' => '六',
-        '7' => '七',
-        '8' => '八',
-        '9' => '九',
-        _ => c,
-    }).collect()
 }
 
 #[derive(Debug)]
@@ -272,11 +257,14 @@ fn chapter_range(chapters: &[Chapter]) -> (u32, u32) {
 
 pub enum NovelSite {
     Kakuyomu,
+    Syosetu,
 }
 impl NovelSite {
     pub fn is_a_novel(uri: &Uri) -> Option<NovelSite> {
         if self::kakuyomu::is_kakuyomu_novel(uri) {
             Some(Self::Kakuyomu)
+        } else if self::syosetu::is_syosetu_novel(uri) {
+            Some(Self::Syosetu)
         } else {
             None
         }
@@ -286,6 +274,7 @@ impl NovelSite {
     pub fn make_novel(&self, uri: Uri) -> NovelResult<Novel> {
         match self {
             Self::Kakuyomu => self::kakuyomu::make_kakuyomu_novel(uri),
+            Self::Syosetu => self::syosetu::make_syosetu_novel(uri),
         }
     }
 }

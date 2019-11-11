@@ -7,9 +7,8 @@ use rayon::prelude::*;
 use crate::{
     NovelError, NovelResult, NovelComponent,
     novel::{
-        Novel, Section, Chapter,
-        NovelStatus,
-        NovelContents,
+        Novel, Section, Chapter, NovelStatus, NovelContents,
+        novel_utils,
     },
     traverser::{TreeTraverser},
 };
@@ -134,6 +133,7 @@ impl MainPageData {
             .text_contents();
         let date = chapter_node.select_first(CHAPTER_DATE_SELECTOR).unwrap()
             .text_contents();
+        let date = novel_utils::convert_num_string_to_ja(&date);
         let attributes = element.attributes.borrow();
         let uri_path = attributes.get("href").unwrap().to_string();
         let order_num = self.increment_and_get_chapters();

@@ -10,17 +10,38 @@ save_dir = "C:\\Manga\\!BooksToCopy"
 # [[novels]]
 # url = "https://kakuyomu.jp/works/1177354054882961557"
 # short_name = "魔法引きモフ"
-[[novels]]
-url = "https://kakuyomu.jp/works/1177354054884043614"
-short_name = "何故美女"
-[[novels]]
-url = "https://kakuyomu.jp/works/1177354054885111468"
-short_name = "英雄譚ノーマルガチャ"
+# [[novels]]
+# url = "https://kakuyomu.jp/works/1177354054884043614"
+# short_name = "何故美女"
+# [[novels]]
+# url = "https://kakuyomu.jp/works/1177354054885111468"
+# short_name = "英雄譚ノーマルガチャ"
 
 # ---- Syosetu Novels ----
-[[novels]]
-url = "https://ncode.syosetu.com/n2267be/"
-short_name = "Reゼロから異世界"
-[[novels]]
-url = "https://ncode.syosetu.com/n6316bn/"
-short_name = "転スラ"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n2267be/"
+# short_name = "Reゼロ"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n6316bn/"
+# short_name = "転スラ"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n4402bd/"
+# short_name = "オーバーロード前編"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n1839bd/"
+# short_name = "オーバーロード後編"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n3765dp/"
+# short_name = "古龍の昔話"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n9673bn/"
+# short_name = "王竜王討伐"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n9669bk/"
+# short_name = "無職転生"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n4251cr/"
+# short_name = "無職転生蛇足"
+# [[novels]]
+# url = "https://ncode.syosetu.com/n9038dg/"
+# short_name = "ジョブレス・オブリージュ"
